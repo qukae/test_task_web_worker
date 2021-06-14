@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { BehaviorSubject, of, Subject } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import { RootService } from './root.service';
-import { map } from 'rxjs/operators';
-import { ThemePalette } from '@angular/material/core';
+import { DataI } from './app.models';
+import { throttleTime } from 'rxjs/operators';
 
 
 @Component({
@@ -11,37 +11,43 @@ import { ThemePalette } from '@angular/material/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  constructor (private rootService: RootService) {}
+  constructor (private rootService: RootService) {
+  }
   displayedColumns = ['id', 'int', 'float', 'color','child'];
   timer: number = 1000;
   size: number = 10;
-  data$: any
-  worker = new Worker(new URL('./fake-socket.worker', import.meta.url));
+  selectedRadio: string = 'main';
+  data$: Observable<DataI[]> | Subject<DataI[]>;
+  worker: Worker;
+
+  radioChange() {
+    if(this.selectedRadio === 'main') this.useService()
+    if(this.selectedRadio === 'worker') this.useWorker()
+  }
+
   ngOnInit () {
-    // this.data$ = this.rootService.data$(this.timer, this.size)
-    // .pipe(map( arr => arr.splice(arr.length-10)));
-    this.engageWorker()
+    this.useService()
   }
-  engageWorker() {
-    if (typeof Worker !== 'undefined') {
-      this.worker.onmessage = ({ data }) => {
-        this.data$ = of(data)
-      };
-      this.worker.postMessage({timer: this.timer, size: this.size});
-    } else {
-      // Web workers are not supported in this environment.
-      // You should add a fallback so that your program still executes correctly.
-    }
+  useWorker() {
+    if (this.worker) this.worker.terminate();
+    this.worker = new Worker(new URL('./fake-socket.worker', import.meta.url));
+    this.data$ = new Subject();
+    this.data$ = this.data$.pipe(throttleTime(500));
+    this.worker.onmessage = ({ data }) => {
+      if( this.data$ instanceof Subject) {
+      this.data$.next(data)
+      }
+    };
+    this.worker.postMessage({timer: this.timer, size: this.size});
+  }
+  useService() {
+    if (this.worker) this.worker.terminate()
+    this.data$ = this.rootService.data$(this.timer, this.size).pipe(throttleTime(500))
   }
 
-
-  sliderChange(val: number | null, type: string) {
-    if(val === null) return
-    if(type === 'timer') this.timer = val
-    if(type === 'size') this.size = val
-    // this.data$ = this.rootService.data$(this.timer, this.size)
-    // .pipe(map( arr => arr.splice(arr.length-10)));
-    this.engageWorker()
+  sliderChange() {
+    if(this.selectedRadio === 'main') this.useService()
+    if(this.selectedRadio === 'worker') this.useWorker()
   }
 
 }

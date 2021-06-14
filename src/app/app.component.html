@@ -1,16 +1,19 @@
 <div class="wrap">
-  <!-- <p>data: {{(data$ | async) | json}}</p> -->
   <div class="slider-wrap">
-    <mat-slider (change)="sliderChange($event.value, 'timer')" min="1" max="1000" step="1" [value]="timer"></mat-slider>
+    <mat-slider (change)="sliderChange()" min="1" max="1000" step="1" [(ngModel)]="timer"></mat-slider>
     <p>interval ms.: {{timer}}  </p>
-    <mat-slider (change)="sliderChange($event.value, 'size')" min="1" max="1000000" step="1" [value]="size"></mat-slider>
+    <mat-slider (change)="sliderChange()" min="1" max="1000000" step="1" [(ngModel)]="size"></mat-slider>
     <p>size: {{size}}  </p>
   </div>  
   <div>
     <p>spinner will freeze on high load if main thread option selected and works fine with web worker</p>
-    <mat-radio-group aria-label="Select an option">
-      <mat-radio-button value="1">main thread</mat-radio-button>
-      <mat-radio-button value="2">web worker</mat-radio-button>
+    <mat-radio-group 
+    aria-label="Select an option"     
+    name="radioOpt1" 
+    [(ngModel)]="selectedRadio"
+    (change)="radioChange()">
+      <mat-radio-button value="main">main thread</mat-radio-button>
+      <mat-radio-button value="worker">web worker</mat-radio-button>
     </mat-radio-group>
     <mat-spinner></mat-spinner>
   </div>
